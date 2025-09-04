@@ -1,0 +1,90 @@
+# apiVersion: apps/v1 
+# kind: Deployment
+# metadata:
+#   name: my-deployment
+#   namespace: namespace-1
+#   labels:
+#     app: my-deploy
+# spec:
+#   replicas: 3
+#   selector:
+#     matchLabels:
+#       app: my-mongo
+#   template:
+#     metadata:
+#       labels:
+#         app: my-mongo
+#     spec:
+#       containers:
+#       - name: my-mongodb
+#         image: mongo:latest
+#         ports:
+#         - containerPort: 27017
+
+
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: mongo
+#   namespace: namespace-1
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: my-mongo
+#   template:
+#     metadata:
+#       labels:
+#         app: my-mongo
+#     spec:
+#       containers:
+#         - image: mongo
+#           name: mongo
+#           args: ["--dbpath", "/data/db"]
+#           env:
+#             - name: MONGO_INITDB_ROOT_USERNAME
+#               value: "admin"
+#             - name: MONGO_INITDB_ROOT_PASSWORD
+#               value: "password"
+#           volumeMounts:
+#             - mountPath: /data/db
+#               name: mongo-volume
+#       volumes:
+#         - name: mongo-volume
+#           persistentVolumeClaim:
+#             claimName: my-pvc
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo
+  namespace: namespace-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-mongo
+  template:
+    metadata:
+      labels:
+        app: my-mongo
+    spec:
+      serviceAccountName: my-app-sa
+      containers:
+        - name: mongo
+          image: mongo
+          args: ["--config", "/etc/mongo/mongod.conf"]
+          envFrom:
+            - secretRef:
+                 name: mongo-secret
+
+            - configMapRef:
+                 name: mongo-config
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongo-volume
+      volumes:
+        - name: mongo-volume
+          persistentVolumeClaim:
+            claimName: my-pvc
