@@ -55,13 +55,87 @@
 #             claimName: my-pvc
 
 
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: mongo
+#   namespace: namespace-1
+# spec:
+#   replicas: 3
+#   selector:
+#     matchLabels:
+#       app: my-mongo
+#   template:
+#     metadata:
+#       labels:
+#         app: my-mongo
+#     spec:
+#       serviceAccountName: my-app-sa
+#       containers:
+#         - name: mongo
+#           image: mongo
+#           args: ["--config", "/etc/mongo/mongod.conf"]
+#           envFrom:
+#             - secretRef:
+#                  name: mongo-secret
+
+#             - configMapRef:
+#                  name: mongo-config
+#           volumeMounts:
+#             - mountPath: /data/db
+#               name: mongo-volume
+#       volumes:
+#         - name: mongo-volume
+#           persistentVolumeClaim:
+#             claimName: my-pvc
+
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: mongo
+#   namespace: namespace-1
+# spec:
+#   replicas: 3
+#   selector:
+#     matchLabels:
+#       app: my-mongo
+#   template:
+#     metadata:
+#       labels:
+#         app: my-mongo
+#     spec:
+#       containers:
+#         - name: mongo
+#           image: mongo:6.0
+#           args: ["--config", "/etc/mongo/mongod.conf"]
+#           ports:
+#             - containerPort: 27017
+#           envFrom:
+#             - secretRef:
+#                 name: mongo-secret
+#           volumeMounts:
+#             - mountPath: /data/db
+#               name: mongo-volume
+#             - name: mongo-config-volume
+#               mountPath: /etc/mongo/mongod.conf
+#               subPath: mongod.conf
+
+             
+#       volumes:
+#         - name: mongo-volume
+#           persistentVolumeClaim:
+#             claimName: my-pvc
+#         - name: mongo-config-volume
+#           configMap:
+#             name: mongo-config
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mongo
   namespace: namespace-1
 spec:
-  replicas: 1
+  replicas: 1   # use 1 first, increase after it works
   selector:
     matchLabels:
       app: my-mongo
@@ -73,18 +147,25 @@ spec:
       serviceAccountName: my-app-sa
       containers:
         - name: mongo
-          image: mongo
-          args: ["--config", "/etc/mongo/mongod.conf"]
+          image: mongo:6.0
+          args: ["--config", "/etc/mongod.conf"]
+          # args: ["--dbpath", "/data/db"]
           envFrom:
             - secretRef:
-                 name: mongo-secret
-
+                name: mongo-secret
             - configMapRef:
-                 name: mongo-config
+                name: mongo-info
           volumeMounts:
-            - mountPath: /data/db
-              name: mongo-volume
+            - name: mongo-volume
+              mountPath: /data/db
+            - name: mongo-config-volume
+              mountPath: /etc/mongod.conf
+              subPath: mongod.conf   # Mount the file, not entire dir
       volumes:
         - name: mongo-volume
           persistentVolumeClaim:
             claimName: my-pvc
+        - name: mongo-config-volume
+          configMap:
+            name: mongo-config
+
